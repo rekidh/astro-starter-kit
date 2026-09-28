@@ -1,0 +1,137 @@
+---
+import { cn } from '~/lib/utils';
+
+type Props = {
+  /** Wajib — pembaca layar butuh tahu carousel ini isinya apa. */
+  label: string;
+  /**
+   * Parameter Swiper. Diteruskan apa adanya ke elemen sebelum initialize().
+   * Lihat https://swiperjs.com/element#parameters
+   */
+  params?: Record<string, unknown>;
+  class?: string;
+};
+
+const {
+  label,
+  class: className,
+  params = {
+    slidesPerView: 'auto',
+    spaceBetween: 16,
+    navigation: true,
+    pagination: { clickable: true },
+    a11y: {
+      prevSlideMessage: 'Slide sebelumnya',
+      nextSlideMessage: 'Slide berikutnya',
+      paginationBulletMessage: 'Ke slide {{index}}',
+    },
+  },
+} = Astro.props;
+---
+
+{/*
+  Swiper Element (web component) — bukan Swiper React/Vue, jadi tidak butuh
+  island framework.
+
+  Dua hal yang menjaga biayanya tetap terkendali:
+  1. `import()` dinamis yang baru jalan saat slider mendekati viewport,
+     sehingga JS Swiper tidak pernah ada di jalur kritis LCP.
+  2. Sebelum Swiper ter-inisialisasi (atau kalau JS gagal), CSS fallback
+     di bawah membuat slider tetap bisa di-scroll horizontal. Tidak ada
+     kondisi di mana konten jadi tak terjangkau.
+*/}
+<div class={cn('relative', className)} role="region" aria-roledescription="carousel" aria-label={label}>
+  <swiper-container data-swiper data-params={JSON.stringify(params)} init="false">
+    <slot />
+  </swiper-container>
+</div>
+
+<style is:global>
+  /* Fallback sebelum Swiper ter-inisialisasi.
+     Harus global: <swiper-slide> datang lewat <slot> dari halaman pemanggil,
+     jadi di luar jangkauan scoping style Astro. */
+  swiper-container[data-swiper]:not([data-ready]) {
+    display: flex;
+    gap: 1rem;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scroll-behavior: smooth;
+    overscroll-behavior-x: contain;
+    scrollbar-width: none;
+  }
+
+  swiper-container[data-swiper]:not([data-ready])::-webkit-scrollbar {
+    display: none;
+  }
+
+  swiper-container[data-swiper]:not([data-ready]) > swiper-slide {
+    flex: 0 0 auto;
+    scroll-snap-align: start;
+  }
+
+  swiper-container[data-swiper] {
+    --swiper-theme-color: var(--color-brand-600);
+    --swiper-navigation-size: 24px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    swiper-container[data-swiper]:not([data-ready]) {
+      scroll-behavior: auto;
+    }
+  }
+</style>
+
+<script>
+  let registered = false;
+
+  const containers = document.querySelectorAll<HTMLElement>('swiper-container[data-swiper]');
+
+  if (containers.length > 0) {
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    const init = async (el: HTMLElement) => {
+      const { register } = await import('swiper/element/bundle');
+
+      // register() mendaftarkan custom element secara global — sekali saja.
+      if (!registered) {
+        register();
+        registered = true;
+      }
+
+      let params: Record<string, unknown> = {};
+      try {
+        params = JSON.parse(el.dataset.params || '{}');
+      } catch {
+        params = {};
+      }
+
+      // WCAG 2.2.2: jangan pernah autoplay kalau user minta gerak dikurangi.
+      if (reduceMotion) {
+        params.autoplay = false;
+        params.speed = 0;
+      }
+
+      Object.assign(el, params);
+      (el as HTMLElement & { initialize: () => void }).initialize();
+      el.setAttribute('data-ready', '');
+    };
+
+    if ('IntersectionObserver' in window) {
+      const io = new IntersectionObserver(
+        (entries, obs) => {
+          for (const entry of entries) {
+            if (!entry.isIntersecting) continue;
+            obs.unobserve(entry.target);
+            void init(entry.target as HTMLElement);
+          }
+        },
+        // Mulai memuat sedikit sebelum terlihat, supaya transisinya mulus.
+        { rootMargin: '200px 0px' },
+      );
+
+      containers.forEach((el) => io.observe(el));
+    } else {
+      containers.forEach((el) => void init(el));
+    }
+  }
+</script>

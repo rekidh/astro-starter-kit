@@ -1,0 +1,42 @@
+---
+import BaseLayout from '~/layouts/BaseLayout.astro';
+import Button from '~/components/ui/Button.astro';
+import { siteConfig } from '~/config/site';
+---
+
+<BaseLayout
+  path="/404"
+  title="Halaman tidak ditemukan"
+  description="Halaman yang Anda cari tidak ada atau sudah dipindahkan."
+  noindex
+>
+  <section class="mx-auto flex max-w-2xl flex-col items-start px-4 py-24">
+    <p class="text-sm font-medium" style="color: var(--text-muted);">Error 404</p>
+    <h1 class="mt-2 text-3xl font-semibold tracking-tight sm:text-4xl">
+      Halaman tidak ditemukan
+    </h1>
+    <p class="mt-4" style="color: var(--text-muted);">
+      Alamat yang Anda tuju tidak ada atau sudah dipindahkan.
+    </p>
+
+    <div class="mt-8 flex flex-wrap gap-3">
+      <Button href="/">Kembali ke beranda</Button>
+      <Button href="/kontak" variant="outline">Hubungi kami</Button>
+    </div>
+
+    <nav aria-label="Halaman populer" class="mt-10">
+      <p class="text-sm font-medium">Mungkin Anda mencari:</p>
+      <ul class="mt-2 space-y-1 text-sm">
+        {
+          siteConfig.nav.map((item) => (
+            <li>
+              <a href={item.href} class="hover:underline">
+                {item.label}
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+    </nav>
+  </section>
+</BaseLayout>

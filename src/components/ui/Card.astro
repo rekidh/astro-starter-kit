@@ -1,0 +1,19 @@
+---
+import { cn } from '~/lib/utils';
+import type { HTMLAttributes } from 'astro/types';
+
+type Props = HTMLAttributes<'div'> & {
+  /** Render sebagai <article> untuk kartu yang berdiri sendiri secara semantik. */
+  as?: 'div' | 'article' | 'li';
+};
+
+const { as: Tag = 'div', class: className, ...rest } = Astro.props;
+---
+
+<Tag
+  class={cn('rounded-lg border p-6', className)}
+  style="border-color: var(--surface-border); background-color: var(--surface-muted);"
+  {...rest}
+>
+  <slot />
+</Tag>

@@ -1,0 +1,38 @@
+---
+import { siteConfig } from '~/config/site';
+import Button from '~/components/ui/Button.astro';
+
+type Props = {
+  title?: string;
+  subtitle?: string;
+};
+
+const { title = siteConfig.tagline, subtitle = siteConfig.description } = Astro.props;
+---
+
+{/*
+  Hero memuat elemen LCP.
+
+  Sengaja TANPA class `reveal`: animasi masuk di area above-the-fold
+  menunda LCP dan membuat halaman terasa lambat. Animasi baru dipakai
+  di seksi-seksi bawah.
+
+  Saat gambar hero ditambahkan nanti, gambar itulah satu-satunya yang
+  boleh eager + fetchpriority="high" + di-preload.
+*/}
+<section class="mx-auto max-w-6xl px-4 py-20 sm:py-28">
+  <div class="max-w-2xl">
+    <h1 class="text-4xl font-semibold tracking-tight text-balance sm:text-5xl">
+      {title}
+    </h1>
+
+    <p class="mt-5 text-lg text-pretty" style="color: var(--text-muted);">
+      {subtitle}
+    </p>
+
+    <div class="mt-8 flex flex-wrap gap-3">
+      <Button href="/kontak" size="lg">Hubungi Kami</Button>
+      <Button href="/layanan" size="lg" variant="outline">Lihat Layanan</Button>
+    </div>
+  </div>
+</section>
